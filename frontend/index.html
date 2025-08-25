@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Fraud & Reimbursement Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f6fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: #2d89ef;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 24px;
+        }
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2d89ef;
+        }
+        form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input, select {
+            padding: 8px;
+            width: 95%;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        .full-width {
+            grid-column: 1 / span 2;
+        }
+        button {
+            background: #2d89ef;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1b64b2;
+        }
+        .result-card {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #eef4ff;
+            border-left: 6px solid #2d89ef;
+        }
+        .decision {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .approve {
+            color: green;
+        }
+        .decline {
+            color: red;
+        }
+        .review {
+            color: orange;
+        }
+        .upload-section {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 8px;
+            text-align: center;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        .bulk-results {
+            margin-top: 20px;
+        }
+        .bulk-item {
+            background: #fff9f0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 6px solid #ff9800;
+        }
+    </style>
+</head>
+<body>
+<header>Medical Fraud & Reimbursement Checker</header>
+
+<div class="container">
+    <h2>Single Prediction</h2>
+    <form id="predictForm">
+        <div>
+            <label>Person ID</label>
+            <input type="text" name="person_id">
+        </div>
+        <div>
+            <label>First Name</label>
+            <input type="text" name="first_name">
+        </div>
+        <div>
+            <label>Last Name</label>
+            <input type="text" name="last_name">
+        </div>
+        <div>
+            <label>Date of Birth</label>
+            <input type="date" name="date_of_birth">
+        </div>
+        <div>
+            <label>Age</label>
+            <input type="number" name="age">
+        </div>
+        <div>
+            <label>Email</label>
+            <input type="email" name="email">
+        </div>
+        <div>
+            <label>Phone</label>
+            <input type="text" name="phone">
+        </div>
+        <div>
+            <label>Policy No</label>
+            <input type="text" name="policy_no">
+        </div>
+        <div>
+            <label>Policy Type</label>
+            <input type="text" name="policy_type">
+        </div>
+        <div>
+            <label>Policy Start Date</label>
+            <input type="date" name="policy_start_date">
+        </div>
+        <div>
+            <label>Policy End Date</label>
+            <input type="date" name="policy_end_date">
+        </div>
+        <div>
+            <label>Claim Count</label>
+            <input type="number" name="claim_count">
+        </div>
+        <div>
+            <label>Last Claim Date</label>
+            <input type="date" name="last_claim_date">
+        </div>
+        <div>
+            <label>Smoker</label>
+            <select name="smoker">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+        <div class="full-width">
+            <button type="submit">Predict</button>
+        </div>
+    </form>
+
+    <div id="singleResult"></div>
+
+    <div class="upload-section">
+        <h2>Bulk Prediction</h2>
+        <input type="file" id="bulkFile">
+        <button onclick="uploadBulk()">Upload & Predict</button>
+    </div>
+    <div id="bulkResult" class="bulk-results"></div>
+</div>
+
+<script>
+const API_BASE = "";
+
+document.getElementById("predictForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = {};
+    formData.forEach((value, key) => data[key] = value || null);
+
+    try {
+        const res = await fetch(`${API_BASE}/predict`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        });
+        const json = await res.json();
+        showSingleResult(json);
+    } catch (err) {
+        document.getElementById("singleResult").innerHTML = "<p style='color:red'>Error: " + err + "</p>";
+    }
+});
+
+function showSingleResult(data) {
+    const container = document.getElementById("singleResult");
+    const decisionClass = data.decision === "Approve" ? "approve" : (data.decision === "Decline" ? "decline" : "review");
+    container.innerHTML = `
+        <div class="result-card">
+            <p class="decision ${decisionClass}">Decision: ${data.decision}</p>
+            <p><strong>Reason:</strong> ${data.reason}</p>
+            <p><strong>Eligibility Probability:</strong> ${data.ready_probability}</p>
+            <p><strong>Fraud Score:</strong> ${data.fraud_score}</p>
+            <p><strong>Rules Hits:</strong> ${data.rules_hits.join(", ")}</p>
+            <p><strong>Explanations:</strong> ${data.explanations.join("; ")}</p>
+        </div>
+    `;
+}
+
+async function uploadBulk() {
+    const fileInput = document.getElementById("bulkFile");
+    if (!fileInput.files.length) {
+        alert("Please select a file");
+        return;
+    }
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        const res = await fetch(`${API_BASE}/predict-bulk`, {
+            method: "POST",
+            body: formData
+        });
+        const json = await res.json();
+        showBulkResults(json.predictions);
+    } catch (err) {
+        document.getElementById("bulkResult").innerHTML = "<p style='color:red'>Error: " + err + "</p>";
+    }
+}
+
+function showBulkResults(predictions) {
+    const container = document.getElementById("bulkResult");
+    container.innerHTML = "<h3>Bulk Prediction Results</h3>";
+    predictions.forEach((item, index) => {
+        const decisionClass = item.decision === "Approve" ? "approve" : (item.decision === "Decline" ? "decline" : "review");
+        container.innerHTML += `
+            <div class="bulk-item">
+                <p><strong>Row ${index+1}</strong></p>
+                <p class="decision ${decisionClass}">Decision: ${item.decision}</p>
+                <p><strong>Reason:</strong> ${item.reason}</p>
+                <p><strong>Eligibility Probability:</strong> ${item.ready_probability}</p>
+                <p><strong>Fraud Score:</strong> ${item.fraud_score}</p>
+                <p><strong>Rules Hits:</strong> ${item.rules_hits.join(", ")}</p>
+            </div>
+        `;
+    });
+}
+</script>
+
+</body>
+</html>
