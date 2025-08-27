@@ -1,20 +1,18 @@
 import subprocess
-import pkg_resources
 import sys
 import os
+import importlib.metadata
 
-# Path to your requirements.txt
 requirements_path = os.path.join(os.path.dirname(__file__), "requirements.txt")
 
+def get_installed_packages():
+    return {dist.metadata['Name'].lower() for dist in importlib.metadata.distributions()}
+
 def install_missing_packages(requirements_file):
-    # Read required packages
     with open(requirements_file) as f:
         required = f.read().splitlines()
 
-    # Get installed packages
-    installed = {pkg.key for pkg in pkg_resources.working_set}
-
-    # Find missing packages
+    installed = get_installed_packages()
     missing = [pkg for pkg in required if pkg.split("==")[0].lower() not in installed]
 
     if missing:
